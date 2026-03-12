@@ -9,58 +9,78 @@
 ### 依赖
 
 ```bash
-# 已安装
-pip3 install dashscope
+# 安装 Anthropic SDK
+pip3 install anthropic
 ```
 
 ### 配置
 
+**方式 1: 环境变量（推荐）**
+
 ```bash
-# 方式 1: 使用默认 API Key（已配置）
-# API Key: sk-sp-b36bbbfc16bf49e4aa48b9a4f94cbc6d
+# 添加到 ~/.bashrc 或 ~/.zshrc
+export ANTHROPIC_BASE_URL="https://coding.dashscope.aliyuncs.com/apps/anthropic"
+export ANTHROPIC_API_KEY="sk-sp-b36bbbfc16bf49e4aa48b9a4f94cbc6d"
+export QWEN_MODEL="qwen3-coder-plus"
+```
 
-# 方式 2: 配置自己的 API Key
-./qwen-coder config sk-your-api-key-here
+**方式 2: 配置文件**
 
-# 方式 3: 使用环境变量
-export QWEN_API_KEY=sk-your-api-key-here
+```bash
+# 创建 ~/.qwen_coder_env 文件
+cat > ~/.qwen_coder_env << EOF
+export ANTHROPIC_BASE_URL="https://coding.dashscope.aliyuncs.com/apps/anthropic"
+export ANTHROPIC_API_KEY="sk-sp-b36bbbfc16bf49e4aa48b9a4f94cbc6d"
+export QWEN_MODEL="qwen3-coder-plus"
+EOF
 ```
 
 ---
 
 ## 🚀 使用方法
 
-### 1. 生成代码
+### 方式 1: Qwen Coder CLI
 
 ```bash
-# 生成 Python 代码
-./qwen-coder generate "写一个快速排序算法"
+# 生成代码
+qwen-coder generate "写一个快速排序算法"
 
-# 生成 JavaScript 代码
-./qwen-coder generate "用 JavaScript 写一个防抖函数"
+# 解释代码
+qwen-coder explain < script.py
 
-# 生成特定语言
-./qwen-coder generate "用 Rust 写一个链表"
+# 审查代码
+qwen-coder review < script.py
 ```
 
-### 2. 解释代码
+### 方式 2: Claude Code CLI（推荐）
 
 ```bash
-# 解释文件
-./qwen-coder explain < script.py
+# 直接调用
+claude -p --model qwen3-coder-plus "用 Python 写一个快速排序"
 
-# 解释代码片段
-echo "def factorial(n): return 1 if n <= 1 else n * factorial(n-1)" | ./qwen-coder explain
+# 交互式
+claude --model qwen3-coder-plus
 ```
 
-### 3. 审查代码
+### 方式 3: Python API
 
-```bash
-# 审查文件
-./qwen-coder review < script.py
+```python
+from anthropic import Anthropic
 
-# 审查代码片段
-echo "password = '123456'" | ./qwen-coder review
+client = Anthropic(
+    base_url="https://coding.dashscope.aliyuncs.com/apps/anthropic",
+    api_key="sk-sp-b36bbbfc16bf49e4aa48b9a4f94cbc6d"
+)
+
+response = client.messages.create(
+    model="qwen3-coder-plus",
+    max_tokens=4096,
+    messages=[
+        {"role": "user", "content": "写一个 Python Hello World"}
+    ]
+)
+
+print(response.content[0].text)
 ```
 
 ---
@@ -69,34 +89,31 @@ echo "password = '123456'" | ./qwen-coder review
 
 | 命令 | 说明 | 示例 |
 |------|------|------|
-| `generate` | 生成代码 | `./qwen-coder generate "写个排序"` |
-| `explain` | 解释代码 | `./qwen-coder explain < file.py` |
-| `review` | 审查代码 | `./qwen-coder review < file.py` |
-| `config` | 配置 API Key | `./qwen-coder config sk_xxx` |
+| `generate` | 生成代码 | `qwen-coder generate "写个排序"` |
+| `explain` | 解释代码 | `qwen-coder explain < file.py` |
+| `review` | 审查代码 | `qwen-coder review < file.py` |
 
 ---
 
-## 🔧 配置
+## 🔧 配置详情
 
-### API Key 存储位置
+### API 端点
 
-```
-~/.qwen_coder_config
-```
+| 类型 | 端点 |
+|------|------|
+| **Anthropic 兼容** | https://coding.dashscope.aliyuncs.com/apps/anthropic |
+| **OpenAI 兼容** | https://coding.dashscope.aliyuncs.com/v1 |
 
-### 配置文件格式
-
-```json
-{
-  "api_key": "sk-your-api-key-here"
-}
-```
-
-### 环境变量
+### 认证
 
 ```bash
-export QWEN_API_KEY=sk-your-api-key-here
-export DASHSCOPE_API_KEY=sk-your-api-key-here
+export ANTHROPIC_API_KEY="sk-sp-b36bbbfc16bf49e4aa48b9a4f94cbc6d"
+```
+
+### 模型
+
+```bash
+export QWEN_MODEL="qwen3-coder-plus"
 ```
 
 ---
@@ -107,44 +124,45 @@ export DASHSCOPE_API_KEY=sk-your-api-key-here
 
 ```bash
 # 生成工具函数
-./qwen-coder generate "Python 读取 JSON 文件并解析"
+claude -p --model qwen3-coder-plus "Python 读取 JSON 文件"
 
 # 生成算法
-./qwen-coder generate "二分查找算法"
+claude -p --model qwen3-coder-plus "二分查找算法"
 
 # 生成测试
-./qwen-coder generate "为这个函数写单元测试：def add(a, b): return a + b"
+claude -p --model qwen3-coder-plus "为这个函数写单元测试"
 ```
 
 ### 代码学习
 
 ```bash
 # 学习开源代码
-curl https://raw.githubusercontent.com/.../app.py | ./qwen-coder explain
+curl https://raw.githubusercontent.com/.../app.py | qwen-coder explain
 
 # 理解复杂逻辑
-cat complex_function.py | ./qwen-coder explain
+cat complex_function.py | qwen-coder explain
 ```
 
 ### 代码审查
 
 ```bash
 # 审查自己的代码
-git diff HEAD | ./qwen-coder review
+git diff HEAD | qwen-coder review
 
 # 审查 PR 代码
-cat pull_request.diff | ./qwen-coder review
+cat pull_request.diff | qwen-coder review
 ```
 
 ---
 
-## 📊 模型信息
+## 📊 配置信息
 
 | 参数 | 值 |
 |------|------|
-| **模型** | qwen-coder-plus |
+| **模型** | qwen3-coder-plus |
 | **提供商** | 阿里云通义千问 |
-| **SDK** | dashscope |
+| **SDK** | anthropic (Anthropic 兼容 API) |
+| **API 端点** | https://coding.dashscope.aliyuncs.com/apps/anthropic |
 | **API Key** | sk-sp-b36bbbfc16bf49e4aa48b9a4f94cbc6d |
 
 ---
@@ -158,52 +176,6 @@ cat pull_request.diff | ./qwen-coder review
 
 ---
 
-## 📝 示例
-
-### 示例 1: 生成快速排序
-
-```bash
-$ ./qwen-coder generate "Python 快速排序"
-
-def quick_sort(arr):
-    if len(arr) <= 1:
-        return arr
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    middle = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    return quick_sort(left) + middle + quick_sort(right)
-```
-
-### 示例 2: 解释代码
-
-```bash
-$ echo "print([x**2 for x in range(10)])" | ./qwen-coder explain
-
-这段代码使用了列表推导式：
-1. range(10) 生成 0-9 的数字序列
-2. x**2 对每个数字进行平方运算
-3. [x**2 for x in range(10)] 创建包含所有平方数的列表
-4. print() 输出结果：[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
-```
-
-### 示例 3: 代码审查
-
-```bash
-$ echo "password = '123456'" | ./qwen-coder review
-
-🔴 安全问题:
-1. 硬编码密码 - 不应该在代码中硬编码敏感信息
-2. 弱密码 - '123456' 是非常弱的密码
-
-✅ 建议:
-- 使用环境变量存储敏感信息
-- 使用密码管理工具
-- 实施密码强度策略
-```
-
----
-
 ## 🔗 相关链接
 
 - [通义千问官网](https://tongyi.aliyun.com/)
@@ -212,6 +184,7 @@ $ echo "password = '123456'" | ./qwen-coder review
 
 ---
 
-**版本**: 1.0.0  
+**版本**: 1.1.0  
 **创建日期**: 2026-03-13  
+**更新日期**: 2026-03-13（正确配置方式）  
 **作者**: AI Operator
