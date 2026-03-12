@@ -40,6 +40,7 @@
 - 🔄 PR 自动审查和评论
 - 🔄 每周项目报告生成
 - 🔄 项目健康度监控
+- 🔄 AI 自我进化（基于 SEA 循环）
 
 ### 透明化记录
 - 📝 [AI 决策日志](docs/AI_DECISIONS.md) - 每个重要决策的原因和过程
@@ -61,7 +62,13 @@ myfirstproject/
 │   ├── issue-classifier.ts    # Issue 智能分类
 │   ├── pr-analyzer.ts         # PR 质量分析
 │   ├── health-monitor.ts      # 项目健康度监控
-│   └── report-generator.ts    # 周报生成器
+│   ├── report-generator.ts    # 周报生成器
+│   └── evolution-engine/      # AI 自我进化引擎
+│       ├── scripts/
+│       │   ├── assess.mjs       # 自我评估
+│       │   ├── learn.mjs        # 学习引擎
+│       │   └── evolve.mjs       # 进化机制
+│       └── SKILL.md           # 进化引擎文档
 ├── docs/                    # 透明化文档
 │   ├── AI_DECISIONS.md        # AI 决策日志
 │   ├── LEARNING_LOG.md        # AI 学习记录
@@ -95,9 +102,10 @@ AI 的成长记录在 [`docs/LEARNING_LOG.md`](docs/LEARNING_LOG.md) 中：
 
 | 类别 | 技术 |
 |------|------|
-| **语言** | TypeScript, Node.js |
+| **语言** | TypeScript, Node.js, JavaScript (ESM) |
 | **自动化** | GitHub Actions |
 | **AI** | OpenClaw + 飞书妙搭 |
+| **进化引擎** | AI Evolution Engine (SEA 循环) |
 | **部署** | GitHub Pages (文档) |
 
 ---
