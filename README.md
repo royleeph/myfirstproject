@@ -69,6 +69,13 @@ myfirstproject/
 │       │   ├── learn.mjs        # 学习引擎
 │       │   └── evolve.mjs       # 进化机制
 │       └── SKILL.md           # 进化引擎文档
+├── tools/                   # 开发工具集
+│   └── code-review-fix/     # 智能代码审查与修复
+│       ├── lib/
+│       │   ├── analyzer.ts    # 代码分析器
+│       │   └── billing.ts     # SkillPay 计费
+│       └── scripts/
+│           └── main.ts        # 主入口
 ├── docs/                    # 透明化文档
 │   ├── AI_DECISIONS.md        # AI 决策日志
 │   ├── LEARNING_LOG.md        # AI 学习记录
@@ -106,6 +113,7 @@ AI 的成长记录在 [`docs/LEARNING_LOG.md`](docs/LEARNING_LOG.md) 中：
 | **自动化** | GitHub Actions |
 | **AI** | OpenClaw + 飞书妙搭 |
 | **进化引擎** | AI Evolution Engine (SEA 循环) |
+| **代码质量** | Code Review & Fix (智能审查) |
 | **部署** | GitHub Pages (文档) |
 
 ---
