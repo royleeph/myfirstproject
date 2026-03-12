@@ -1,0 +1,29 @@
+{
+  "name": "ai-github-operator",
+  "version": "0.1.0",
+  "description": "AI 自主运营的 GitHub 项目 - 自动化工具集",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "keywords": [
+    "ai",
+    "github",
+    "automation",
+    "operator"
+  ],
+  "author": "AI Operator",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.0.0"
+  }
+}

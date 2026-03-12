@@ -1,0 +1,136 @@
+# PR 自动审查
+# 当新 PR 创建时，自动分析代码质量并给出初步审查意见
+
+name: PR Reviewer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const additions = pr.additions || 0;
+            const deletions = pr.deletions || 0;
+            const changedFiles = pr.changed_files || 0;
+            
+            console.log(`PR #${pr.number}: +${additions} -${deletions} (${changedFiles} files)`);
+            
+            // 检查清单
+            const checks = [];
+            let passed = 0;
+            let warnings = 0;
+            
+            // 检查 1: PR 描述
+            if (pr.body && pr.body.length > 20) {
+              checks.push({ name: 'PR 描述', status: '✅', detail: '有详细描述' });
+              passed++;
+            } else {
+              checks.push({ name: 'PR 描述', status: '⚠️', detail: '描述过于简单' });
+              warnings++;
+            }
+            
+            // 检查 2: 代码量
+            const totalChanges = additions + deletions;
+            if (totalChanges < 500) {
+              checks.push({ name: '代码量', status: '✅', detail: `${totalChanges} 行，合理范围` });
+              passed++;
+            } else if (totalChanges < 1000) {
+              checks.push({ name: '代码量', status: '⚠️', detail: `${totalChanges} 行，建议拆分` });
+              warnings++;
+            } else {
+              checks.push({ name: '代码量', status: '❌', detail: `${totalChanges} 行，强烈建议拆分` });
+              warnings++;
+            }
+            
+            // 检查 3: 文件数量
+            if (changedFiles <= 5) {
+              checks.push({ name: '文件数量', status: '✅', detail: `${changedFiles} 个文件` });
+              passed++;
+            } else {
+              checks.push({ name: '文件数量', status: '⚠️', detail: `${changedFiles} 个文件，略多` });
+              warnings++;
+            }
+            
+            // 生成审查报告
+            let report = `## 🤖 AI 自动审查报告\n\n`;
+            report += `**PR**: #${pr.number} - ${pr.title}\n`;
+            report += `**作者**: @${pr.user.login}\n`;
+            report += `**变更**: +${additions} -${deletions} (${changedFiles} 文件)\n\n`;
+            
+            report += `### 📋 检查清单\n\n`;
+            report += `| 项目 | 状态 | 详情 |\n`;
+            report += `|------|------|------|\n`;
+            for (const check of checks) {
+              report += `| ${check.name} | ${check.status} | ${check.detail} |\n`;
+            }
+            report += `\n**总计**: ${passed} 通过，${warnings} 警告\n\n`;
+            
+            // 建议
+            report += `### 💡 建议\n\n`;
+            if (warnings === 0) {
+              report += `✅ 看起来不错！等待人工最终审查。\n`;
+            } else {
+              report += `发现 ${warnings} 个需要注意的地方，建议：\n`;
+              if (totalChanges >= 1000) {
+                report += `- 📦 考虑将大 PR 拆分成多个小 PR\n`;
+              }
+              if (!pr.body || pr.body.length < 20) {
+                report += `- 📝 补充更详细的 PR 描述\n`;
+              }
+              if (changedFiles > 5) {
+                report += `- 📁 文件较多，请确认是否都属于同一功能\n`;
+              }
+            }
+            
+            report += `\n---\n`;
+            report += `*这是 AI 自动生成的审查报告，仅供参考。最终审查由人类维护者完成.*`;
+            
+            // 发布评论
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: report
+            });
+            
+            console.log('Review comment posted');
+
+      - name: Label PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = ['ai-reviewed'];
+            
+            // 根据分支名添加标签
+            const branch = pr.head.ref;
+            if (branch.includes('feature')) {
+              labels.push('feature');
+            } else if (branch.includes('fix') || branch.includes('bug')) {
+              labels.push('bugfix');
+            } else if (branch.includes('docs')) {
+              labels.push('documentation');
+            }
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: labels
+            });
+            
+            console.log(`Added labels: ${labels.join(', ')}`);

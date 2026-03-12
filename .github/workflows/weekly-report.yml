@@ -1,0 +1,151 @@
+# 每周项目报告生成器
+# 每周日自动生成项目周报
+
+name: Weekly Report
+
+on:
+  schedule:
+    # 每周日 23:00 UTC (周一 07:00 北京时间)
+    - cron: '0 23 * * 0'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Weekly Report
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const now = new Date();
+            const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            // 格式化日期
+            const formatDate = (date) => date.toISOString().split('T')[0];
+            const weekStart = formatDate(lastWeek);
+            const weekEnd = formatDate(now);
+            const weekNumber = Math.ceil(now.getDate() / 7);
+            
+            // 获取 Issues 统计
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              since: weekStart
+            });
+            
+            const newIssues = issues.data.filter(i => i.pull_request === undefined);
+            const closedIssues = issues.data.filter(i => i.state === 'closed' && i.pull_request === undefined);
+            
+            // 获取 PRs 统计
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all'
+            });
+            
+            const newPRs = prs.data.filter(pr => new Date(pr.created_at) >= lastWeek);
+            const mergedPRs = prs.data.filter(pr => pr.merged_at && new Date(pr.merged_at) >= lastWeek);
+            
+            // 获取仓库信息
+            const repo = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            
+            // 生成报告
+            let report = `# 📊 项目周报\n\n`;
+            report += `**第 ${weekNumber} 周** (${weekStart} ~ ${weekEnd})\n\n`;
+            
+            report += `## 🎯 核心指标\n\n`;
+            report += `| 指标 | 本周 | 累计 |\n`;
+            report += `|------|------|------|\n`;
+            report += `| **新 Issues** | ${newIssues.length} | ${repo.data.open_issues} |\n`;
+            report += `| **关闭 Issues** | ${closedIssues.length} | - |\n`;
+            report += `| **新 PRs** | ${newPRs.length} | ${repo.data.open_issues} |\n`;
+            report += `| **合并 PRs** | ${mergedPRs.length} | - |\n`;
+            report += `| **Stars** | - | ${repo.data.stargazers_count} |\n`;
+            report += `| **Forks** | - | ${repo.data.forks_count} |\n\n`;
+            
+            report += `## 📝 本周新 Issues\n\n`;
+            if (newIssues.length > 0) {
+              for (const issue of newIssues.slice(0, 10)) {
+                report += `- [#${issue.number}](${issue.html_url}) ${issue.title} by @${issue.user.login}\n`;
+              }
+              if (newIssues.length > 10) {
+                report += `- ... 还有 ${newIssues.length - 10} 个\n`;
+              }
+            } else {
+              report += `*本周没有新 Issues*\n`;
+            }
+            report += `\n`;
+            
+            report += `## ✅ 本周关闭 Issues\n\n`;
+            if (closedIssues.length > 0) {
+              for (const issue of closedIssues.slice(0, 10)) {
+                report += `- [#${issue.number}](${issue.html_url}) ${issue.title}\n`;
+              }
+            } else {
+              report += `*本周没有关闭 Issues*\n`;
+            }
+            report += `\n`;
+            
+            report += `## 🔀 本周 PR 动态\n\n`;
+            report += `### 新 PRs\n\n`;
+            if (newPRs.length > 0) {
+              for (const pr of newPRs) {
+                report += `- [#${pr.number}](${pr.html_url}) ${pr.title} by @${pr.user.login}\n`;
+              }
+            } else {
+              report += `*本周没有新 PRs*\n`;
+            }
+            report += `\n`;
+            
+            report += `### 合并 PRs\n\n`;
+            if (mergedPRs.length > 0) {
+              for (const pr of mergedPRs) {
+                report += `- [#${pr.number}](${pr.html_url}) ${pr.title}\n`;
+              }
+            } else {
+              report += `*本周没有合并 PRs*\n`;
+            }
+            report += `\n`;
+            
+            report += `## 🤖 AI 运营备注\n\n`;
+            report += `- 本周是 AI 自主运营的第 ${Math.ceil((now - new Date('2026-03-12')) / (1000 * 60 * 60 * 24)) + 1} 天\n`;
+            report += `- 所有决策和代码变更都记录在项目文档中\n`;
+            report += `- 欢迎提交 Issue 和 PR 参与项目\n\n`;
+            
+            report += `---\n\n`;
+            report += `*报告生成时间*: ${now.toISOString()}\n`;
+            report += `*生成方式*: GitHub Actions 自动\n`;
+            
+            // 保存报告到文件
+            const fs = require('fs');
+            const reportDir = 'docs/WEEKLY_REPORTS';
+            const reportFile = `${reportDir}/week-${weekNumber}-${weekEnd}.md`;
+            
+            if (!fs.existsSync(reportDir)) {
+              fs.mkdirSync(reportDir, { recursive: true });
+            }
+            
+            fs.writeFileSync(reportFile, report);
+            console.log(`Report saved to ${reportFile}`);
+            
+            // 创建提交
+            const { execSync } = require('child_process');
+            execSync('git config user.name "AI Operator"');
+            execSync('git config user.email "ai-operator@github.com"');
+            execSync('git add docs/WEEKLY_REPORTS/');
+            
+            try {
+              execSync('git commit -m "docs: 添加周报 ' + weekEnd + '"');
+              execSync('git push');
+              console.log('Report committed and pushed');
+            } catch (e) {
+              console.log('No changes to commit');
+            }

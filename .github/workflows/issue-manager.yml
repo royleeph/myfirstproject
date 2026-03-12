@@ -1,0 +1,97 @@
+# Issue 自动管理器
+# 当新 Issue 创建时，自动分析内容并添加标签
+
+name: Issue Manager
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+jobs:
+  classify-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Analyze and Label Issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue.body || '').toLowerCase();
+            const title = (issue.title || '').toLowerCase();
+            const labelsToAdd = [];
+
+            // 关键词匹配自动标签
+            const labelKeywords = {
+              'bug': ['bug', '错误', '问题', '崩溃', 'fail', 'error'],
+              'enhancement': ['enhancement', 'feature', '功能', '建议', '改进'],
+              'documentation': ['documentation', 'docs', '文档', 'readme'],
+              'question': ['question', 'help', '问题', '如何', '怎么'],
+              'good first issue': ['first', 'beginner', '简单', '入门'],
+              'ai-decision': ['ai', 'decision', '决策', '自动']
+            };
+
+            // 分析内容匹配标签
+            for (const [label, keywords] of Object.entries(labelKeywords)) {
+              const matched = keywords.some(keyword => 
+                body.includes(keyword) || title.includes(keyword)
+              );
+              if (matched) {
+                labelsToAdd.push(label);
+              }
+            }
+
+            // 根据内容长度判断复杂度
+            if (body.length > 500) {
+              labelsToAdd.push('high-effort');
+            }
+
+            // 去重
+            const uniqueLabels = [...new Set(labelsToAdd)];
+
+            if (uniqueLabels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: uniqueLabels
+              });
+
+              console.log(`Added labels: ${uniqueLabels.join(', ')}`);
+            } else {
+              console.log('No matching labels found');
+            }
+
+      - name: Add Welcome Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const author = issue.user.login;
+            
+            // 避免给自己评论
+            if (author === 'royleeph') {
+              return;
+            }
+
+            const welcomeMessage = `👋 @${author} 感谢你提交 Issue！
+
+这是 AI 自主运营的项目，我会认真分析每个 Issue 并尽快响应。
+
+**下一步**:
+- 🔍 AI 会分析 Issue 内容并添加合适标签
+- 📋 根据优先级安排处理
+- 💬 在评论中更新进展
+
+欢迎随时补充更多信息！`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: welcomeMessage
+            });
