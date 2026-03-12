@@ -1,0 +1,41 @@
+# 敏感凭证文件（绝对不要提交到 GitHub）
+.env
+.env.local
+.env.*.local
+.github_credentials
+*.pem
+*.key
+*secret*
+*credential*
+*password*
+
+# 依赖目录
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+
+# 构建输出
+dist/
+build/
+*.o
+*.so
+
+# 日志文件
+*.log
+logs/
+
+# IDE 配置
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+tmp/
+temp/
+*.tmp

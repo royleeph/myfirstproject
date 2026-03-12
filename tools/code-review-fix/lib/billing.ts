@@ -3,9 +3,17 @@
 // スキルペイ課金統合 / 결제 연동 / Интеграция биллинга
 // ═══════════════════════════════════════════════════
 
-const BILLING_API_URL = 'https://skillpay.me';
-const BILLING_API_KEY = 'sk_97337971993cff4076fb179c0e1f42d592a89406507c603db864d6784c849bd8';  // Dashboard → 接入配置 / Integration Config
-export const SKILL_ID = '3da52f24-9e3d-43bd-931d-0925e237ed93';
+// ⚠️ SECURITY: API keys should be loaded from environment variables
+// Never commit actual API keys to GitHub!
+const BILLING_API_URL = process.env.SKILLPAY_API_URL || 'https://skillpay.me';
+const BILLING_API_KEY = process.env.SKILLPAY_API_KEY;  // Load from .env file
+export const SKILL_ID = process.env.SKILLPAY_SKILL_ID || '3da52f24-9e3d-43bd-931d-0925e237ed93';
+
+// Validate required env vars
+if (!BILLING_API_KEY) {
+  console.error('ERROR: SKILLPAY_API_KEY environment variable is required');
+  process.exit(1);
+}
 
 // ① Check balance / 查余额 / 残高確認 / 잔액 확인 / Проверка баланса
 export async function checkBalance(userId: string): Promise<number> {
